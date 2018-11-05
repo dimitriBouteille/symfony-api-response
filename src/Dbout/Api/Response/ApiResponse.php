@@ -70,6 +70,7 @@ class ApiResponse extends JsonResponse {
      * @param array $headers
      * @param bool  $json
      *
+     * @throws \Dbout\Api\ApiException
      * @throws \Dbout\Api\Response\ApiException
      */
     public function __construct($data = null, $statusType = null, int $statusCode = 200, array $headers = array(), bool $json = false) {
@@ -122,8 +123,8 @@ class ApiResponse extends JsonResponse {
      */
     public function setStatusType(string $type): self {
 
-        if(!in_array($this->getStatusType(), ApiResponseType::$status)) {
-            throw new ApiException(sprintf('The status type %s is invalid. Types : %s', $this->getStatusType(), implode(', ', ApiResponseType::$status)));
+        if(!in_array($type, ApiResponseType::$status)) {
+            throw new ApiException(sprintf('The status type %s is invalid. Types : %s', $type, implode(', ', ApiResponseType::$status)));
         }
 
         $this->__status[self::RESPONSE_STATUS_TYPE] = $type;
@@ -198,7 +199,6 @@ class ApiResponse extends JsonResponse {
 
     /**
      * Function prepare
-     * Permet de structurer la reponse
      *
      * @param \Symfony\Component\HttpFoundation\Request $request
      *
@@ -207,18 +207,30 @@ class ApiResponse extends JsonResponse {
      */
     public function prepare(Request $request) {
 
+        $response = $this->toArray();
+
+        $this->setData($response);
+        parent::prepare($request);
+    }
+
+    /**
+     * Function toArray
+     * Permet de recuperer le contenu de la reponse au format tableau
+     *
+     * @return array
+     * @throws \Dbout\Api\Response\ApiException
+     */
+    public function toArray(): array {
+
         // Check if response type is valid
         if(is_null($this->getStatusType())) {
             throw new ApiException('The status type can\'t be null.');
         }
 
-        $response = [
+        return [
             ApiResponse::RESPONSE_STATUS => $this->__status,
             ApiResponse::RESPONSE_RESULT => $this->__results
         ];
-
-        $this->setData($response);
-        parent::prepare($request);
     }
 
 }
